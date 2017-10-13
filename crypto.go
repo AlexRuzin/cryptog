@@ -25,7 +25,7 @@ import (
     "fmt"
 )
 
-func Test() {
+func Main() {
     out("test")
 }
 

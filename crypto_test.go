@@ -26,8 +26,8 @@ import (
     "testing"
 )
 
-func TestMain(t *testing.T) {
-    Test()
+func TestCryptoSanity(t *testing.T) {
+    Main()
     t.Logf("[+] Test 1 PASS")
     return
 }
