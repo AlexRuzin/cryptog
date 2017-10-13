@@ -22,17 +22,86 @@
 package crypto
 
 import (
-    "fmt"
+    "os"
+    "crypto/aes"
+    "crypto/md5"
+    "crypto/rand"
+    "io"
+    "crypto/cipher"
 )
 
-func Main() {
-    out("test")
+const AES_KEY_SEED string = "b1ec0efec8bf032e586ffd4071b79757"
+const STATUS_OK int = 0
+const STATUS_FAIL int = -1
+
+
+func AES128CBC_Encrypt(data []byte, input_key *[]byte) ([]byte, int) {
+    var key []byte
+    if input_key == nil {
+        key = generate_hostname_key()
+    } else {
+        copy(key[:], *input_key)
+    }
+
+    pad := make([]byte, len(data) + (aes.BlockSize - len(data) % aes.BlockSize))
+    copy(pad, data)
+
+    block, err := aes.NewCipher(key)
+    if err != nil {
+        return nil, STATUS_FAIL
+    }
+
+    ciphertext := make([]byte, aes.BlockSize + len(pad))
+    iv := ciphertext[:aes.BlockSize]
+    if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+        return nil, STATUS_FAIL
+    }
+
+    mode := cipher.NewCBCEncrypter(block, iv)
+    mode.CryptBlocks(ciphertext[aes.BlockSize:], pad)
+
+    return ciphertext, STATUS_OK
 }
 
-func out(debug string) {
-    fmt.Println(debug)
+func AES128CBC_Decrypt(data []byte, input_key *[]byte) ([]byte, int) {
+    if len(data) % aes.BlockSize != 0 {
+        panic("ciphertext is not a multiple of the block size")
+    }
+
+    ciphertext := make([]byte, len(data))
+    copy(ciphertext, data)
+
+    var key []byte
+    if input_key == nil {
+        key = generate_hostname_key()
+    } else {
+        copy(key[:], *input_key)
+    }
+
+    block, err := aes.NewCipher(key)
+    if err != nil {
+        return nil, STATUS_FAIL
+    }
+
+    if len(ciphertext) < aes.BlockSize {
+        return nil, STATUS_FAIL
+    }
+    iv := ciphertext[:aes.BlockSize]
+    ciphertext = ciphertext[aes.BlockSize:]
+
+    mode := cipher.NewCBCDecrypter(block, iv)
+    mode.CryptBlocks(ciphertext, ciphertext)
+
+    return ciphertext, STATUS_OK
 }
 
-func out_hex(debug []byte) {
-    fmt.Printf("%v\r\n", debug)
+func generate_hostname_key() []byte {
+    host, _ := os.Hostname()
+    host += AES_KEY_SEED
+
+    sum := md5.Sum([]byte(host))
+    output := make([]byte, aes.BlockSize)
+    copy(output, sum[:])
+
+    return output
 }

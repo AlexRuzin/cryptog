@@ -24,10 +24,51 @@ package crypto
 
 import (
     "testing"
+    "io"
+    "crypto/rand"
+    "crypto/md5"
 )
 
-func TestCryptoSanity(t *testing.T) {
-    Main()
-    t.Logf("[+] Test 1 PASS")
-    return
+func TestCryptoRandomKey(t *testing.T) {
+    plaintext := make([]byte, 4094)
+    plaintext_sum := md5.Sum(plaintext)
+
+    if _, err := io.ReadFull(rand.Reader, plaintext); err != nil {
+        t.Errorf("ERROR: Failed to generate random pad")
+        t.FailNow()
+    }
+
+    ciphertext, err := AES128CBC_Encrypt(plaintext, nil)
+    if err != 0 {
+        t.Errorf("ERROR: Encryption failure")
+        t.FailNow()
+    }
+
+    decrypted, err := AES128CBC_Decrypt(ciphertext, nil)
+    if err != 0 {
+        t.Errorf("ERROR: Decryption failure")
+        t.FailNow()
+    }
+
+    decrypted_sum := md5.Sum(decrypted)
+    if testEq(decrypted_sum, plaintext_sum) != true {
+        if err != 0 {
+            t.Errorf("ERROR: checksum failure")
+            t.FailNow()
+        }
+    }
+}
+
+func testEq(a, b [16]byte) bool {
+    if len(a) != len(b) {
+        return false
+    }
+
+    for i := range a {
+        if a[i] != b[i] {
+            return false
+        }
+    }
+
+    return true
 }
