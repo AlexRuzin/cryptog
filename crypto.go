@@ -28,12 +28,19 @@ import (
     "crypto/rand"
     "io"
     "crypto/cipher"
+    "bytes"
+    "encoding/gob"
 )
 
 const AES_KEY_SEED string = "b1ec0efec8bf032e586ffd4071b79757"
 const STATUS_OK int = 0
 const STATUS_FAIL int = -1
 
+type aes_header struct {
+    plaintext_sum [16]byte
+    orig_len uint
+    iv [16]byte
+}
 
 func AES128CBC_Encrypt(data []byte, input_key *[]byte) ([]byte, int) {
     var key []byte
@@ -43,7 +50,23 @@ func AES128CBC_Encrypt(data []byte, input_key *[]byte) ([]byte, int) {
         copy(key[:], *input_key)
     }
 
-    pad := make([]byte, len(data) + (aes.BlockSize - len(data) % aes.BlockSize))
+    iv, _ := gen_iv()
+    header := aes_header {
+        plaintext_sum: md5.Sum(data),
+        orig_len: uint(len(data)),
+        iv: iv,
+    }
+
+    serialized_header := func (object interface{}) *bytes.Buffer {
+        b := new(bytes.Buffer)
+        e := gob.NewEncoder(b)
+        if err := e.Encode(object); err != nil {
+            return nil /* This should be an assertion -- FIXME */
+        }
+        return b
+    } (header)
+
+    pad := make([]byte, len(data) + /* Padding */ (aes.BlockSize - len(data) % aes.BlockSize))
     copy(pad, data)
 
     block, err := aes.NewCipher(key)
@@ -51,22 +74,16 @@ func AES128CBC_Encrypt(data []byte, input_key *[]byte) ([]byte, int) {
         return nil, STATUS_FAIL
     }
 
-    ciphertext := make([]byte, aes.BlockSize + len(pad))
-    iv := ciphertext[:aes.BlockSize]
-    if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-        return nil, STATUS_FAIL
-    }
+    ciphertext := make([]byte, len(pad))
 
-    mode := cipher.NewCBCEncrypter(block, iv)
+    mode := cipher.NewCBCEncrypter(block, header.iv[:])
     mode.CryptBlocks(ciphertext[aes.BlockSize:], pad)
 
     return ciphertext, STATUS_OK
 }
 
 func AES128CBC_Decrypt(data []byte, input_key *[]byte) ([]byte, int) {
-    if len(data) % aes.BlockSize != 0 {
-        panic("ciphertext is not a multiple of the block size")
-    }
+
 
     ciphertext := make([]byte, len(data))
     copy(ciphertext, data)
@@ -95,6 +112,14 @@ func AES128CBC_Decrypt(data []byte, input_key *[]byte) ([]byte, int) {
     return ciphertext, STATUS_OK
 }
 
+func gen_iv() ([16]byte, int) {
+    var iv [16]byte
+    if _, err := io.ReadFull(rand.Reader, iv[:]); err != nil {
+        return iv, STATUS_FAIL
+    }
+
+    return iv, STATUS_OK
+}
 func generate_hostname_key() []byte {
     host, _ := os.Hostname()
     host += AES_KEY_SEED

@@ -30,13 +30,13 @@ import (
 )
 
 func TestCryptoRandomKey(t *testing.T) {
-    plaintext := make([]byte, 4094)
-    plaintext_sum := md5.Sum(plaintext)
-
+    //plaintext := make([]byte, 4094)
+    plaintext := make([]byte, 4)
     if _, err := io.ReadFull(rand.Reader, plaintext); err != nil {
         t.Errorf("ERROR: Failed to generate random pad")
         t.FailNow()
     }
+    plaintext_sum := md5.Sum(plaintext)
 
     ciphertext, err := AES128CBC_Encrypt(plaintext, nil)
     if err != 0 {
@@ -52,10 +52,8 @@ func TestCryptoRandomKey(t *testing.T) {
 
     decrypted_sum := md5.Sum(decrypted)
     if testEq(decrypted_sum, plaintext_sum) != true {
-        if err != 0 {
-            t.Errorf("ERROR: checksum failure")
-            t.FailNow()
-        }
+        t.Errorf("ERROR: checksum failure")
+        t.FailNow()
     }
 }
 
