@@ -26,6 +26,8 @@ import (
     "testing"
 )
 
-func TestMain(m *testing.M) {
+func TestMain(t *testing.T) {
     Test()
+    t.Logf("[+] Test 1 PASS")
+    return
 }
