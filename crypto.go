@@ -37,9 +37,9 @@ const STATUS_OK int = 0
 const STATUS_FAIL int = -1
 
 type aes_header struct {
-    plaintext_sum [16]byte
-    orig_len uint
-    iv [16]byte
+    PlaintextSum [16]byte
+    OrigLen uint
+    IV [16]byte
 }
 
 func AES128CBC_Encrypt(data []byte, input_key *[]byte) ([]byte, int) {
@@ -52,31 +52,39 @@ func AES128CBC_Encrypt(data []byte, input_key *[]byte) ([]byte, int) {
 
     iv, _ := gen_iv()
     header := aes_header {
-        plaintext_sum: md5.Sum(data),
-        orig_len: uint(len(data)),
-        iv: iv,
+        PlaintextSum: md5.Sum(data),
+        OrigLen: uint(len(data)),
+        IV: iv,
     }
 
-    serialized_header := func (object interface{}) *bytes.Buffer {
+    serialized_header := func (object interface{}) []byte {
         b := new(bytes.Buffer)
         e := gob.NewEncoder(b)
         if err := e.Encode(object); err != nil {
             return nil /* This should be an assertion -- FIXME */
         }
-        return b
+        return b.Bytes()
     } (header)
 
-    pad := make([]byte, len(data) + /* Padding */ (aes.BlockSize - len(data) % aes.BlockSize))
+    /* Generate the raw stream that contains the header and data */
+    raw_buffer := new(bytes.Buffer)
+    raw_buffer.Write(serialized_header)
+    raw_buffer.Write(data)
+
+    /* Generates the pad. This is just the header + raw data + a ~16 byte pad (if required) */
+    pad := make([]byte, raw_buffer.Len() + /* Header + data */ (aes.BlockSize - raw_buffer.Len() % aes.BlockSize))
     copy(pad, data)
+
+    /* Store the IV as the first block of the ciphertext */
+    ciphertext := make([]byte, len(iv) + len(pad))
+    copy(ciphertext, iv[:])
 
     block, err := aes.NewCipher(key)
     if err != nil {
         return nil, STATUS_FAIL
     }
 
-    ciphertext := make([]byte, len(pad))
-
-    mode := cipher.NewCBCEncrypter(block, header.iv[:])
+    mode := cipher.NewCBCEncrypter(block, header.IV[:])
     mode.CryptBlocks(ciphertext[aes.BlockSize:], pad)
 
     return ciphertext, STATUS_OK
