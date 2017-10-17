@@ -30,6 +30,8 @@ import (
     "crypto/cipher"
     "bytes"
     "encoding/gob"
+    "crypto/rc4"
+    "errors"
 )
 
 const AES_KEY_SEED string = "b1ec0efec8bf032e586ffd4071b79757"
@@ -42,6 +44,33 @@ type aes_header struct {
     IV [16]byte
 }
 
+func RC4_Encrypt(data []byte, input_key *[]byte) ([]byte, error) {
+    var key []byte
+    if input_key == nil || len(data) == 0 {
+        key = generate_hostname_key()
+    } else {
+        copy(key[:], *input_key)
+    }
+
+    cipher, err := rc4.NewCipher(key)
+    if err != nil {
+        return nil, errors.New("error: Failed to generate a new RC4 cipher")
+    }
+
+    iv, _ := gen_iv()
+    encrypted := bytes.Buffer{}
+    encrypted.Write(iv[:])
+    encrypted.Write(data)
+
+    var output []byte = make([]byte, encrypted.Len())
+    copy(output, encrypted.Bytes())
+
+    cipher.XORKeyStream(output, output)
+
+    return output, nil
+}
+
+/* FIXME -- The AES functions are not complete */
 func AES128CBC_Encrypt(data []byte, input_key *[]byte) ([]byte, int) {
     var key []byte
     if input_key == nil {
@@ -90,6 +119,7 @@ func AES128CBC_Encrypt(data []byte, input_key *[]byte) ([]byte, int) {
     return ciphertext, STATUS_OK
 }
 
+/* FIXME -- The AES functions are not complete */
 func AES128CBC_Decrypt(data []byte, input_key *[]byte) ([]byte, int) {
     if len(data) % aes.BlockSize != 0 || len(data) < aes.BlockSize {
         return nil, STATUS_FAIL
