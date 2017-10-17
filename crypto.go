@@ -91,7 +91,9 @@ func AES128CBC_Encrypt(data []byte, input_key *[]byte) ([]byte, int) {
 }
 
 func AES128CBC_Decrypt(data []byte, input_key *[]byte) ([]byte, int) {
-
+    if len(data) % aes.BlockSize != 0 || len(data) < aes.BlockSize {
+        return nil, STATUS_FAIL
+    }
 
     ciphertext := make([]byte, len(data))
     copy(ciphertext, data)
@@ -108,16 +110,25 @@ func AES128CBC_Decrypt(data []byte, input_key *[]byte) ([]byte, int) {
         return nil, STATUS_FAIL
     }
 
-    if len(ciphertext) < aes.BlockSize {
-        return nil, STATUS_FAIL
-    }
     iv := ciphertext[:aes.BlockSize]
-    ciphertext = ciphertext[aes.BlockSize:]
 
     mode := cipher.NewCBCDecrypter(block, iv)
     mode.CryptBlocks(ciphertext, ciphertext)
 
-    return ciphertext, STATUS_OK
+    _, output := func (data []byte) (*aes_header, []byte) {
+        m := new(aes_header)
+        b := bytes.Buffer{}
+        b.Write(data)
+        d := gob.NewDecoder(&b)
+        err := d.Decode(m)
+        if err != nil {
+            return nil, nil
+        }
+        /* FIXME */
+        return nil, nil
+    } (ciphertext)
+
+    return output, STATUS_OK
 }
 
 func gen_iv() ([16]byte, int) {
