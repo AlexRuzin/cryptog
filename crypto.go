@@ -44,6 +44,34 @@ type aes_header struct {
     IV [16]byte
 }
 
+/* The default initialization vector length for a new RC4 stream */
+const RC4_IV_LEN uint = 16
+
+func RC4_Decrypt(data []byte, input_key *[]byte) ([]byte, error) {
+    var key []byte
+    if input_key == nil || len(data) == 0 {
+        key = generate_hostname_key()
+    } else {
+        copy(key[:], *input_key)
+    }
+
+    cipher, err := rc4.NewCipher(key)
+    if err != nil {
+        return nil, errors.New  ("error: Failed to generate RC4 decryption cipher")
+    }
+
+    var decrypted []byte = make([]byte, len(data))
+    copy(decrypted, data)
+
+    cipher.XORKeyStream(decrypted, decrypted)
+
+    /* Trash the IV */
+    var output []byte = make([]byte, len(data) - int(RC4_IV_LEN))
+    copy(output, decrypted[RC4_IV_LEN:])
+
+    return output, nil
+}
+
 func RC4_Encrypt(data []byte, input_key *[]byte) ([]byte, error) {
     var key []byte
     if input_key == nil || len(data) == 0 {
@@ -54,7 +82,7 @@ func RC4_Encrypt(data []byte, input_key *[]byte) ([]byte, error) {
 
     cipher, err := rc4.NewCipher(key)
     if err != nil {
-        return nil, errors.New("error: Failed to generate a new RC4 cipher")
+        return nil, errors.New("error: Failed to generate a new RC4 encryption cipher")
     }
 
     iv, _ := gen_iv()
@@ -161,8 +189,8 @@ func AES128CBC_Decrypt(data []byte, input_key *[]byte) ([]byte, int) {
     return output, STATUS_OK
 }
 
-func gen_iv() ([16]byte, int) {
-    var iv [16]byte
+func gen_iv() ([RC4_IV_LEN]byte, int) {
+    var iv [RC4_IV_LEN]byte
     if _, err := io.ReadFull(rand.Reader, iv[:]); err != nil {
         return iv, STATUS_FAIL
     }

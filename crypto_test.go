@@ -59,6 +59,9 @@ func fTestCryptoRandomKeyAES(t *testing.T) {
 }
 
 func TestCryptoRC4(t *testing.T) {
+    /*
+     * Test the RC4 cipher by generating a random key, and encrypting 4 bytes of data
+     */
     plaintext := make([]byte, 4)
     if _, err := io.ReadFull(rand.Reader, plaintext); err != nil {
         t.Errorf("ERROR: Failed to generate random pad")
@@ -68,7 +71,21 @@ func TestCryptoRC4(t *testing.T) {
 
     ciphertext, err := RC4_Encrypt(plaintext, nil /* Generate a key based on the hostname */)
     if err != nil {
+        t.Errorf("ERROR: Failed to encrypt buffer")
+        t.FailNow()
+    }
 
+    decrypted, err := RC4_Decrypt(ciphertext, nil)
+    if err != nil {
+        t.Errorf("ERROR: Failed to decrypt buffer")
+        t.FailNow()
+    }
+
+    decrypted_sum := md5.Sum(decrypted)
+
+    if testEq(decrypted_sum, plaintext_sum) != true {
+        t.Errorf("ERROR: Sums do not match for inputs. RC4 failure.")
+        t.FailNow()
     }
 }
 
