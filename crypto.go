@@ -48,11 +48,16 @@ type aes_header struct {
 const RC4_IV_LEN uint = 16
 
 func RC4_Decrypt(data []byte, input_key *[]byte) ([]byte, error) {
+    if input_key != nil && (len(*input_key) < 1 || len(*input_key) > 256) || len(data) == 0 {
+        return nil, errors.New("error: Invalid key length")
+    }
+
     var key []byte
-    if input_key == nil || len(data) == 0 {
+    if input_key == nil {
         key = generate_hostname_key()
     } else {
-        copy(key[:], *input_key)
+        key = make([]byte, len(*input_key))
+        copy(key, *input_key)
     }
 
     cipher, err := rc4.NewCipher(key)
@@ -73,11 +78,16 @@ func RC4_Decrypt(data []byte, input_key *[]byte) ([]byte, error) {
 }
 
 func RC4_Encrypt(data []byte, input_key *[]byte) ([]byte, error) {
+    if input_key != nil && (len(*input_key) < 1 || len(*input_key) > 256) || len(data) == 0 {
+        return nil, errors.New("error: Invalid key length")
+    }
+
     var key []byte
-    if input_key == nil || len(data) == 0 {
+    if input_key == nil{
         key = generate_hostname_key()
     } else {
-        copy(key[:], *input_key)
+        key = make([]byte, len(*input_key))
+        copy(key, *input_key)
     }
 
     cipher, err := rc4.NewCipher(key)

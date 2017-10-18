@@ -58,7 +58,7 @@ func fTestCryptoRandomKeyAES(t *testing.T) {
     }
 }
 
-func TestCryptoRC4(t *testing.T) {
+func TestCryptoRC4_4byte_RKEY(t *testing.T) {
     /*
      * Test the RC4 cipher by generating a random key, and encrypting 4 bytes of data
      */
@@ -87,6 +87,42 @@ func TestCryptoRC4(t *testing.T) {
         t.Errorf("ERROR: Sums do not match for inputs. RC4 failure.")
         t.FailNow()
     }
+
+    t.Logf("PASS: RC4: Random key with 4 bytes")
+}
+
+func TestCryptoRC4_1028byte_KEY(t *testing.T) {
+    /*
+     * Test the RC4 cipher by generating a 1028 byte buffer with a hardcoded key
+     */
+    var key []byte = []byte("TESTINGRC4")
+    plaintext := make([]byte, 1028)
+    if _, err := io.ReadFull(rand.Reader, plaintext); err != nil {
+        t.Errorf("ERROR: Failed to generate random pad")
+        t.FailNow()
+    }
+    plaintext_sum := md5.Sum(plaintext)
+
+    ciphertext, err := RC4_Encrypt(plaintext, &key)
+    if err != nil {
+        t.Errorf("ERROR: Failed to encrypt buffer")
+        t.FailNow()
+    }
+
+    decrypted, err := RC4_Decrypt(ciphertext, &key)
+    if err != nil {
+        t.Errorf("ERROR: Failed to decrypt buffer")
+        t.FailNow()
+    }
+
+    decrypted_sum := md5.Sum(decrypted)
+
+    if testEq(decrypted_sum, plaintext_sum) != true {
+        t.Errorf("ERROR: Sums do not match for inputs. RC4 failure.")
+        t.FailNow()
+    }
+
+    t.Logf("PASS: RC4: Static key with 1028 pad")
 }
 
 func testEq(a, b [16]byte) bool {
