@@ -27,6 +27,7 @@ import (
     "io"
     "crypto/rand"
     "crypto/md5"
+    "crypto/rsa"
 )
 
 /* The AES test was disabled since it needs to be completed */
@@ -125,6 +126,8 @@ func TestCryptoRC4_1028byte_KEY(t *testing.T) {
     t.Logf("PASS: RC4: Static key with 1028 pad")
 }
 
+
+
 func testEq(a, b [16]byte) bool {
     if len(a) != len(b) {
         return false
@@ -138,3 +141,6 @@ func testEq(a, b [16]byte) bool {
 
     return true
 }
+
+
+

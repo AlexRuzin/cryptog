@@ -32,6 +32,7 @@ import (
     "encoding/gob"
     "crypto/rc4"
     "errors"
+    "crypto/rsa"
 )
 
 const AES_KEY_SEED string = "b1ec0efec8bf032e586ffd4071b79757"
@@ -216,4 +217,31 @@ func generate_hostname_key() []byte {
     copy(output, sum[:])
 
     return output
+}
+
+
+func GenerateRSAKeyPair(bitsize int) (public []byte, private *rsa.PrivateKey, err error) {
+    reader := rand.Reader
+    key, err := rsa.GenerateKey(reader, bitsize)
+    if err != nil {
+        return nil, nil, err
+    }
+
+    /* Encode public key */
+    public_key, err := func (key *rsa.PublicKey) ([]byte, error) {
+        var out = bytes.Buffer{}
+
+        encoder := gob.NewEncoder(&out)
+        err := encoder.Encode(key)
+        if err != nil {
+            return nil, err
+        }
+
+        return out.Bytes(), nil
+    } (&key.PublicKey)
+    if err != nil {
+        return nil, nil, err
+    }
+
+    return public_key, key, nil
 }
