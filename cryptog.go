@@ -31,8 +31,8 @@ import (
     "bytes"
     "encoding/gob"
     "crypto/rc4"
-    "errors"
     "crypto/rsa"
+    "github.com/AlexRuzin/util"
 )
 
 const AES_KEY_SEED string = "b1ec0efec8bf032e586ffd4071b79757"
@@ -50,7 +50,7 @@ const RC4_IV_LEN uint = 16
 
 func RC4_Decrypt(data []byte, input_key *[]byte) ([]byte, error) {
     if input_key != nil && (len(*input_key) < 1 || len(*input_key) > 256) || len(data) == 0 {
-        return nil, errors.New("error: Invalid key length")
+        return nil, util.RetErrStr("Invalid key length")
     }
 
     var key []byte
@@ -63,7 +63,7 @@ func RC4_Decrypt(data []byte, input_key *[]byte) ([]byte, error) {
 
     cipher, err := rc4.NewCipher(key)
     if err != nil {
-        return nil, errors.New  ("error: Failed to generate RC4 decryption cipher")
+        return nil, util.RetErrStr("Failed to generate RC4 decryption cipher")
     }
 
     var decrypted []byte = make([]byte, len(data))
@@ -80,7 +80,7 @@ func RC4_Decrypt(data []byte, input_key *[]byte) ([]byte, error) {
 
 func RC4_Encrypt(data []byte, input_key *[]byte) ([]byte, error) {
     if input_key != nil && (len(*input_key) < 1 || len(*input_key) > 256) || len(data) == 0 {
-        return nil, errors.New("error: Invalid key length")
+        return nil, util.RetErrStr("Invalid key length")
     }
 
     var key []byte
@@ -93,7 +93,7 @@ func RC4_Encrypt(data []byte, input_key *[]byte) ([]byte, error) {
 
     cipher, err := rc4.NewCipher(key)
     if err != nil {
-        return nil, errors.New("error: Failed to generate a new RC4 encryption cipher")
+        return nil, util.RetErrStr("Failed to generate a new RC4 encryption cipher")
     }
 
     iv, _ := gen_iv()
