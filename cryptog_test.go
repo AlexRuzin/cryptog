@@ -27,7 +27,6 @@ import (
     "io"
     "crypto/rand"
     "crypto/md5"
-    "crypto/rsa"
 )
 
 /* The AES test was disabled since it needs to be completed */
