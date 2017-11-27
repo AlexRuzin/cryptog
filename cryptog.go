@@ -33,6 +33,7 @@ import (
     "crypto/rc4"
     "crypto/rsa"
     "github.com/AlexRuzin/util"
+    "crypto/sha256"
 )
 
 const AES_KEY_SEED string = "b1ec0efec8bf032e586ffd4071b79757"
@@ -48,6 +49,12 @@ type aes_header struct {
 /* The default initialization vector length for a new RC4 stream */
 const RC4_IV_LEN uint = 16
 var RC4_CONSTANT_VALUE = [4]byte{ 0x40, 0xad, 0x4f, 0x22 }
+
+func RC4_PrepareKey(key []byte) *[]byte {
+    k := sha256.Sum256(key)
+    t := k[:]
+    return &t
+}
 
 func RC4_Decrypt(data []byte, input_key *[]byte) ([]byte, error) {
     if input_key != nil && (len(*input_key) < 1 || len(*input_key) > 256) || len(data) == 0 {
