@@ -47,6 +47,7 @@ type aes_header struct {
 
 /* The default initialization vector length for a new RC4 stream */
 const RC4_IV_LEN uint = 16
+var RC4_CONSTANT_VALUE = [4]byte{ 0x40, 0xad, 0x4f, 0x22 }
 
 func RC4_Decrypt(data []byte, input_key *[]byte) ([]byte, error) {
     if input_key != nil && (len(*input_key) < 1 || len(*input_key) > 256) || len(data) == 0 {
@@ -71,9 +72,16 @@ func RC4_Decrypt(data []byte, input_key *[]byte) ([]byte, error) {
 
     cipher.XORKeyStream(decrypted, decrypted)
 
+    /* Test the constant */
+    var constant = make([]byte, len(RC4_CONSTANT_VALUE))
+    copy(constant, decrypted[RC4_IV_LEN:])
+    if !bytes.Equal(constant, RC4_CONSTANT_VALUE[:]) {
+        return nil, util.RetErrStr("Corrupt RC4 buffer")
+    }
+
     /* Trash the IV */
-    var output []byte = make([]byte, len(data) - int(RC4_IV_LEN))
-    copy(output, decrypted[RC4_IV_LEN:])
+    var output []byte = make([]byte, len(data) - int(RC4_IV_LEN) - int(len(RC4_CONSTANT_VALUE)))
+    copy(output, decrypted[RC4_IV_LEN + uint(len(RC4_CONSTANT_VALUE)):])
 
     return output, nil
 }
@@ -99,6 +107,7 @@ func RC4_Encrypt(data []byte, input_key *[]byte) ([]byte, error) {
     iv, _ := gen_iv()
     encrypted := bytes.Buffer{}
     encrypted.Write(iv[:])
+    encrypted.Write(RC4_CONSTANT_VALUE[:])
     encrypted.Write(data)
 
     var output []byte = make([]byte, encrypted.Len())
