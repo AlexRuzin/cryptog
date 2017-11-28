@@ -25,6 +25,8 @@ This method uses the following structure:
 
 The `IV` is randomized each time, but if the key is the same, then the `Constant` should be the same, otherwise the `RC4_Decrypt()` method will fail.
 
+Please note that if the `input_key` parameter is nil, then the method will generate its own by calling `generateHostnameKey()`, which will be a key based on the hostname of the system. 
+
 ```go
 const RC4_IV_LEN uint = 16
 var RC4_CONSTANT_VALUE = [4]byte{ 0x40, 0xad, 0x4f, 0x22 }
@@ -38,6 +40,14 @@ The decrypt method removes the `IV` and `Constant` values, but checks that the `
 
 ```go
 func RC4_Decrypt(data []byte, input_key *[]byte) ([]byte, error)
+```
+
+## `generateHostnameKey()`
+
+This method is used to generate a key based on the hostname of the system. An MD5 sum of the host is taken and returned as a `[]byte` vector.
+
+```go
+func generateHostnameKey() []byte
 ```
 
 ## AES Wrappers
