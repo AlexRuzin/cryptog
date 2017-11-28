@@ -63,7 +63,7 @@ func RC4_Decrypt(data []byte, input_key *[]byte) ([]byte, error) {
 
     var key []byte
     if input_key == nil {
-        key = generate_hostname_key()
+        key = generateHostnameKey()
     } else {
         key = make([]byte, len(*input_key))
         copy(key, *input_key)
@@ -100,7 +100,7 @@ func RC4_Encrypt(data []byte, input_key *[]byte) ([]byte, error) {
 
     var key []byte
     if input_key == nil{
-        key = generate_hostname_key()
+        key = generateHostnameKey()
     } else {
         key = make([]byte, len(*input_key))
         copy(key, *input_key)
@@ -129,7 +129,7 @@ func RC4_Encrypt(data []byte, input_key *[]byte) ([]byte, error) {
 func AES128CBC_Encrypt(data []byte, input_key *[]byte) ([]byte, int) {
     var key []byte
     if input_key == nil {
-        key = generate_hostname_key()
+        key = generateHostnameKey()
     } else {
         copy(key[:], *input_key)
     }
@@ -185,7 +185,7 @@ func AES128CBC_Decrypt(data []byte, input_key *[]byte) ([]byte, int) {
 
     var key []byte
     if input_key == nil {
-        key = generate_hostname_key()
+        key = generateHostnameKey()
     } else {
         copy(key[:], *input_key)
     }
@@ -224,7 +224,7 @@ func gen_iv() ([RC4_IV_LEN]byte, int) {
 
     return iv, STATUS_OK
 }
-func generate_hostname_key() []byte {
+func generateHostnameKey() []byte {
     host, _ := os.Hostname()
     host += AES_KEY_SEED
 
